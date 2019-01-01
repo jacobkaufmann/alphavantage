@@ -363,3 +363,111 @@ class Client(object):
             return self.process_csv(response)
         else:
             return self.process_json(response)
+
+    def adx(self, symbol: str, interval: str="daily", time_period: int=14, data_format: str="csv"):
+        """ADX (Average Directional Index)
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            time_period: Integer, number of data points used in calculations
+            data_format: String, format of response
+        """
+        assert(interval in self.intervals)
+        assert(data_format in self.data_formats)
+        params = {
+            "function": "ADX",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "time_period": str(time_period),
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        with requests.Session() as sess:
+            response = requests.get(self.base_url, params, stream=True)
+            response.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(response)
+        else:
+            return self.process_json(response)
+
+    def cci(self, symbol: str, interval: str="daily", time_period: int=20, data_format: str="csv"):
+        """CCI (Commodity Channel Index)
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            time_period: Integer, number of data points used in calculations
+            data_format: String, format of response
+        """
+        assert(interval in self.intervals)
+        assert(data_format in self.data_formats)
+        params = {
+            "function": "CCI",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "time_period": str(time_period),
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        with requests.Session() as sess:
+            response = requests.get(self.base_url, params, stream=True)
+            response.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(response)
+        else:
+            return self.process_json(response)
+
+    def aroon(self, symbol: str, interval: str="daily", time_period: int=20, data_format: str="csv"):
+        """Aroon
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            time_period: Integer, number of data points used in calculations
+            data_format: String, format of response
+        """
+        assert(interval in self.intervals)
+        assert(data_format in self.data_formats)
+        params = {
+            "function": "AROON",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "time_period": str(time_period),
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        with requests.Session() as sess:
+            response = requests.get(self.base_url, params, stream=True)
+            response.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(response)
+        else:
+            return self.process_json(response)
+
+    def aroon_osc(self, symbol: str, interval: str="daily", time_period: int=20, data_format: str="csv"):
+        """Aroon Oscillator
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            time_period: Integer, number of data points used in calculations
+            data_format: String, format of response
+        """
+        assert(interval in self.intervals)
+        assert(data_format in self.data_formats)
+        params = {
+            "function": "AROONOSC",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "time_period": str(time_period),
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        with requests.Session() as sess:
+            response = requests.get(self.base_url, params, stream=True)
+            response.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(response)
+        else:
+            return self.process_json(response)
