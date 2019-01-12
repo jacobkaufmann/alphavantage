@@ -10,44 +10,51 @@ import time
 import numpy as np
 import pandas as pd
 
+
+intervals = {
+    "1min",
+    "5min",
+    "15min",
+    "30min",
+    "60min",
+    "daily",
+    "weekly",
+    "monthly"
+}
+series_types = {"close", "open", "high", "low"}
+data_formats = {"json", "csv"}
+output_sizes = {"full", "compact"}
+
+
 class Client(object):
     """Python client for Alpha Vantage API
-
-    Args:
-        max_attempts: Integer, maximum number of requests made to API in
-            in case of failure.
     """
 
     def __init__(self, token, max_attempts: int=3):
-        self.intervals = {
-            "1min",
-            "5min",
-            "15min",
-            "30min",
-            "60min",
-            "daily",
-            "weekly",
-            "monthly"
-        }
-        self.series_types = {"close", "open", "high", "low"}
-        self.data_formats = {"json", "csv"}
-        self.output_sizes = {"full", "compact"}
+        """Initializes the client
+
+        Args:
+            max_attempts: Integer, maximum number of requests made to API in
+                in case of failure.
+        """
 
         self.apikey = token
         self.base_url = "https://www.alphavantage.co/query?"
         self.max_attempts = max_attempts
 
-    def process_csv(self, response):
-        decoded = response.content.decode("utf-8")
+    def process_csv(self, r):
+        decoded = r.content.decode("utf-8")
         data = pd.read_csv(StringIO(decoded))
         columns = data.columns.values
         if columns[0] != "time":
             columns[0] = "time"
         data.columns = columns
+        data = data.set_index("time")
         return data
 
-    def process_json(self, response):
-        decoded = response.json()
+    def process_json(self, r):
+        decoded = r.json()
+        return decoded
 
     def ts_daily(self,
                  symbol: str,
@@ -62,8 +69,8 @@ class Client(object):
             output_size: String, size of time series data
             data_format: String, format of response
         """
-        assert(output_size in self.output_sizes)
-        assert(data_format in self.data_formats)
+        assert(output_size in output_sizes)
+        assert(data_format in data_formats)
         func = "TIME_SERIES_DAILY"
         if adjusted:
             func = func + "_ADJUSTED"
@@ -74,14 +81,13 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
 
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
     def sma(self,
             symbol: str,
@@ -98,9 +104,9 @@ class Client(object):
             series_type: String, desired price type (open, high, low, close)
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(series_type in self.series_types)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
         params = {
             "function": "SMA",
             "symbol": symbol.upper(),
@@ -110,13 +116,12 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
     def ema(self,
             symbol: str,
@@ -133,9 +138,9 @@ class Client(object):
             series_type: String, desired price type (open, high, low, close)
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(series_type in self.series_types)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
         params = {
             "function": "EMA",
             "symbol": symbol.upper(),
@@ -145,13 +150,12 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
     def wma(self,
             symbol: str,
@@ -168,9 +172,9 @@ class Client(object):
             series_type: String, desired price type (open, high, low, close)
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(series_type in self.series_types)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
         params = {
             "function": "WMA",
             "symbol": symbol.upper(),
@@ -180,12 +184,12 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        response = requests.get(self.base_url, params)
-        response.raise_for_status()
+        r = requests.get(self.base_url, params)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
     def macd(self,
              symbol: str,
@@ -206,9 +210,9 @@ class Client(object):
             slow: Integer, slow period
             signal: Integer, signal period
         """
-        assert(interval in self.intervals)
-        assert(series_type in self.series_types)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
         params = {
             "function": "MACD",
             "symbol": symbol.upper(),
@@ -220,13 +224,12 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
     def stoch(self,
               symbol: str,
@@ -245,8 +248,8 @@ class Client(object):
             slowk: Integer, slow k period
             slowd: Integer, slow d period
         """
-        assert(interval in self.intervals)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(data_format in data_formats)
         params = {
             "function": "STOCH",
             "symbol": symbol.upper(),
@@ -257,13 +260,12 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
     def rsi(self,
             symbol: str,
@@ -280,9 +282,9 @@ class Client(object):
             series_type: String, desired price type (open, high, low, close)
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(series_type in self.series_types)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
         params = {
             "function": "RSI",
             "symbol": symbol.upper(),
@@ -292,13 +294,46 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
+
+    def momentum(self,
+                 symbol: str,
+                 interval: str="daily",
+                 time_period: int=14,
+                 series_type: str="close",
+                 data_format: str="csv"):
+        """Momentum
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            time_period: Integer, number of data points used in calculations
+            series_type: String, desired price type (open, high, low, close)
+            data_format: String, format of response
+        """
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
+        params = {
+            "function": "MOM",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "time_period": time_period,
+            "series_type": series_type,
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(r)
+        else:
+            return self.process_json(r)
 
     def ppo(self,
             symbol: str,
@@ -317,9 +352,9 @@ class Client(object):
             fast: Integer, fast period
             slow: Integer, slow period
         """
-        assert(interval in self.intervals)
-        assert(series_type in self.series_types)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
         params = {
             "function": "PPO",
             "symbol": symbol.upper(),
@@ -330,13 +365,12 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
     def ad(self, symbol: str, interval: str="daily", data_format: str="csv"):
         """Chaikin A/D (Accumulation/Distribution) line
@@ -344,11 +378,10 @@ class Client(object):
         Args:
             symbol: String, symbol specifying equity
             interval: String, interval between consequitive data points
-            time_period: Integer, number of data points used in calculations
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(data_format in data_formats)
         params = {
             "function": "AD",
             "symbol": symbol.upper(),
@@ -356,15 +389,18 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
-    def adx(self, symbol: str, interval: str="daily", time_period: int=14, data_format: str="csv"):
+    def adx(self,
+            symbol: str,
+            interval: str="daily",
+            time_period: int=14,
+            data_format: str="csv"):
         """ADX (Average Directional Index)
 
         Args:
@@ -373,8 +409,8 @@ class Client(object):
             time_period: Integer, number of data points used in calculations
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(data_format in data_formats)
         params = {
             "function": "ADX",
             "symbol": symbol.upper(),
@@ -383,15 +419,18 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
-    def cci(self, symbol: str, interval: str="daily", time_period: int=20, data_format: str="csv"):
+    def cci(self,
+            symbol: str,
+            interval: str="daily",
+            time_period: int=20,
+            data_format: str="csv"):
         """CCI (Commodity Channel Index)
 
         Args:
@@ -400,8 +439,8 @@ class Client(object):
             time_period: Integer, number of data points used in calculations
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(data_format in data_formats)
         params = {
             "function": "CCI",
             "symbol": symbol.upper(),
@@ -410,15 +449,18 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
-    def aroon(self, symbol: str, interval: str="daily", time_period: int=20, data_format: str="csv"):
+    def aroon(self,
+              symbol: str,
+              interval: str="daily",
+              time_period: int=20,
+              data_format: str="csv"):
         """Aroon
 
         Args:
@@ -427,8 +469,8 @@ class Client(object):
             time_period: Integer, number of data points used in calculations
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(data_format in data_formats)
         params = {
             "function": "AROON",
             "symbol": symbol.upper(),
@@ -437,15 +479,18 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
 
-    def aroon_osc(self, symbol: str, interval: str="daily", time_period: int=20, data_format: str="csv"):
+    def aroon_osc(self,
+                  symbol: str,
+                  interval: str="daily",
+                  time_period: int=20,
+                  data_format: str="csv"):
         """Aroon Oscillator
 
         Args:
@@ -454,8 +499,8 @@ class Client(object):
             time_period: Integer, number of data points used in calculations
             data_format: String, format of response
         """
-        assert(interval in self.intervals)
-        assert(data_format in self.data_formats)
+        assert(interval in intervals)
+        assert(data_format in data_formats)
         params = {
             "function": "AROONOSC",
             "symbol": symbol.upper(),
@@ -464,10 +509,138 @@ class Client(object):
             "datatype": data_format,
             "apikey": self.apikey
         }
-        with requests.Session() as sess:
-            response = requests.get(self.base_url, params, stream=True)
-            response.raise_for_status()
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
         if data_format == "csv":
-            return self.process_csv(response)
+            return self.process_csv(r)
         else:
-            return self.process_json(response)
+            return self.process_json(r)
+
+    def ultimate_osc(self,
+                     symbol: str,
+                     interval: str="daily",
+                     time_period1: int=7,
+                     time_period2: int=14,
+                     time_period3: int=28,
+                     data_format: str="csv"):
+        """Ultimate Oscillator
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            time_period1: Integer, first time period
+            time_period2: Integer, second time period
+            time_period3: Integer, third time period
+            data_format: String, format of response
+        """
+        assert(interval in intervals)
+        assert(data_format in data_formats)
+        params = {
+            "function": "ULTOSC",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "timeperiod1": str(time_period1),
+            "timeperiod2": str(time_period2),
+            "timeperiod3": str(time_period3),
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(r)
+        else:
+            return self.process_json(r)
+
+    def hilbert_transform_sine(self,
+                               symbol: str,
+                               interval: str="daily",
+                               series_type: str="close",
+                               data_format: str="csv"):
+        """Hilbert Transform Sine Wave
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            series_type: String, desired price type in the time series
+            data_format: String, format of response
+        """
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
+        params = {
+            "function": "HT_SINE",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "series_type": series_type,
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(r)
+        else:
+            return self.process_json(r)
+
+    def hilbert_transform_trendmode(self,
+                                    symbol: str,
+                                    interval: str="daily",
+                                    series_type: str="close",
+                                    data_format: str="csv"):
+        """Hilbert Transform Trend vs Cycle Mode
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            series_type: String, desired price type in the time series
+            data_format: String, format of response
+        """
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
+        params = {
+            "function": "HT_TRENDMODE",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "series_type": series_type,
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(r)
+        else:
+            return self.process_json(r)
+
+    def hilbert_transform_dcperiod(self,
+                                   symbol: str,
+                                   interval: str="daily",
+                                   series_type: str="close",
+                                   data_format: str="csv"):
+        """Hilbert Transform Dominant Cycle Period
+
+        Args:
+            symbol: String, symbol specifying equity
+            interval: String, interval between consequitive data points
+            series_type: String, desired price type in the time series
+            data_format: String, format of response
+        """
+        assert(interval in intervals)
+        assert(series_type in series_types)
+        assert(data_format in data_formats)
+        params = {
+            "function": "HT_DCPERIOD",
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "series_type": series_type,
+            "datatype": data_format,
+            "apikey": self.apikey
+        }
+        r = requests.get(self.base_url, params, stream=True)
+        r.raise_for_status()
+        if data_format == "csv":
+            return self.process_csv(r)
+        else:
+            return self.process_json(r)
