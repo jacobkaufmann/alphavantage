@@ -42,7 +42,7 @@ class Client(object):
         self.base_url = "https://www.alphavantage.co/query?"
         self.max_attempts = max_attempts
 
-    def process_csv(self, r):
+    def process_csv(self, r: requests.Response) -> pd.DataFrame:
         decoded = r.content.decode("utf-8")
         data = pd.read_csv(StringIO(decoded))
         columns = data.columns.values
@@ -52,9 +52,10 @@ class Client(object):
         data = data.set_index("time")
         return data
 
-    def process_json(self, r):
+    def process_json(self, r: requests.Response) -> pd.DataFrame:
         decoded = r.json()
-        return decoded
+        data = pd.read_json(decoded)
+        return data
 
     def ts_daily(self,
                  symbol: str,
